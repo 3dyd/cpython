@@ -2396,7 +2396,7 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     }
     */
     Py_BEGIN_ALLOW_THREADS;
-    hr = CopyFile2(existing_file_name, new_file_name, &params);
+    hr = COMPAT_FN(CopyFile2)(existing_file_name, new_file_name, &params);
     Py_END_ALLOW_THREADS;
     /* For future implementation.
     if (progress_routine != Py_None) {

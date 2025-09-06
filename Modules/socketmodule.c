@@ -5550,16 +5550,34 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             proto = 0;
         }
 #ifdef MS_WINDOWS
+#ifdef COMPAT_VISTA
+        int support_wsa_no_inherit = 1;
+#endif
         Py_BEGIN_ALLOW_THREADS
         fd = WSASocketW(family, type, proto,
                         NULL, 0,
                         WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
+#ifdef COMPAT_VISTA
+        if (fd == INVALID_SOCKET && WSAGetLastError() == WSAEPROTOTYPE) {
+            fd = WSASocketW(family, type, proto, NULL, 0, WSA_FLAG_OVERLAPPED);
+            if (fd != INVALID_SOCKET) {
+                support_wsa_no_inherit = 0;
+            }
+        }
+#endif
         Py_END_ALLOW_THREADS
 
         if (fd == INVALID_SOCKET) {
             set_error();
             return -1;
         }
+#ifdef COMPAT_VISTA
+        if (!support_wsa_no_inherit && !SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
+            SOCKETCLOSE(fd);
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+#endif
 #else
         /* UNIX */
         Py_BEGIN_ALLOW_THREADS

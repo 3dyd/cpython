@@ -81,10 +81,12 @@ typedef int socklen_t;
  * socket.h only defines AF_HYPERV if _WIN32_WINNT is at that level or higher
  * so for now it's just manually defined.
  */
+#ifndef COMPAT_VISTA
 # ifndef AF_HYPERV
 #  define AF_HYPERV 34
 # endif
 # include <hvsocket.h>
+#endif
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_SYS_UN_H

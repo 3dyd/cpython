@@ -26,6 +26,9 @@ extern "C" {
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_typeobject.h"      // struct types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
+#ifdef COMPAT_VISTA
+#include "compat.h"
+#endif
 
 struct _getargs_runtime_state {
     PyThread_type_lock mutex;

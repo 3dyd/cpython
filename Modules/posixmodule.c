@@ -4961,7 +4961,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    ret = PathCchSkipRoot(buffer, &end);
+    ret = COMPAT_FN(PathCchSkipRoot)(buffer, &end);
     Py_END_ALLOW_THREADS
     if (FAILED(ret)) {
         result = Py_BuildValue("sO", "", path->object);
@@ -8833,6 +8833,51 @@ os_setpgrp_impl(PyObject *module)
 #ifdef HAVE_GETPPID
 
 #ifdef MS_WINDOWS
+
+#ifdef COMPAT_VISTA /* Implementation from Python 3.10 */
+
+#include <tlhelp32.h>
+
+static PyObject*
+win32_getppid()
+{
+    HANDLE snapshot;
+    pid_t mypid;
+    PyObject* result = NULL;
+    BOOL have_record;
+    PROCESSENTRY32 pe;
+
+    mypid = getpid(); /* This function never fails */
+
+    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return PyErr_SetFromWindowsErr(GetLastError());
+
+    pe.dwSize = sizeof(pe);
+    have_record = Process32First(snapshot, &pe);
+    while (have_record) {
+        if (mypid == (pid_t)pe.th32ProcessID) {
+            /* We could cache the ulong value in a static variable. */
+            result = PyLong_FromPid((pid_t)pe.th32ParentProcessID);
+            break;
+        }
+
+        have_record = Process32Next(snapshot, &pe);
+    }
+
+    /* If our loop exits and our pid was not found (result will be NULL)
+     * then GetLastError will return ERROR_NO_MORE_FILES. This is an
+     * error anyway, so let's raise it. */
+    if (!result)
+        result = PyErr_SetFromWindowsErr(GetLastError());
+
+    CloseHandle(snapshot);
+
+    return result;
+}
+
+#else /*COMPAT_VISTA*/
+
 #include <processsnapshot.h>
 
 static PyObject*
@@ -8861,6 +8906,8 @@ win32_getppid(void)
     PssFreeSnapshot(process, snapshot);
     return result;
 }
+
+#endif /*COMPAT_VISTA*/
 #endif /*MS_WINDOWS*/
 
 
@@ -14447,7 +14494,7 @@ os_cpu_count_impl(PyObject *module)
     int ncpu = 0;
 #ifdef MS_WINDOWS
 #ifdef MS_WINDOWS_DESKTOP
-    ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    ncpu = COMPAT_FN(GetActiveProcessorCount)(ALL_PROCESSOR_GROUPS);
 #endif
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
@@ -15746,7 +15793,7 @@ os__add_dll_directory_impl(PyObject *module, path_t *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (!(cookie = AddDllDirectory(path->wide))) {
+    if (!(cookie = COMPAT_FN(AddDllDirectory)(path->wide))) {
         err = GetLastError();
     }
     Py_END_ALLOW_THREADS
@@ -15788,7 +15835,7 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
         cookie, "DLL directory cookie");
 
     Py_BEGIN_ALLOW_THREADS
-    if (!RemoveDllDirectory(cookieValue)) {
+    if (!COMPAT_FN(RemoveDllDirectory)(cookieValue)) {
         err = GetLastError();
     }
     Py_END_ALLOW_THREADS

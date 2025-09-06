@@ -29,6 +29,13 @@ WIN32 is still required for the locale module.
 
 */
 
+#if !defined(_WIN64) && !defined(_M_ARM)
+#define COMPAT_VISTA
+#define COMPAT_FN(fn)  compat_##fn
+#else
+#define COMPAT_FN(fn)  fn
+#endif
+
 /* Deprecated USE_DL_EXPORT macro - please use Py_BUILD_CORE */
 #ifdef USE_DL_EXPORT
 #       define Py_BUILD_CORE
@@ -161,9 +168,15 @@ WIN32 is still required for the locale module.
 #endif /* MS_WIN64 */
 
 /* set the version macros for the windows headers */
+#ifdef COMPAT_VISTA
+/* Vista branch requires Windows Vista or greater */
+#define Py_WINVER 0x0600 /* _WIN32_WINNT_VISTA (6.0) */
+#define Py_NTDDI NTDDI_VISTA
+#else
 /* Python 3.12+ requires Windows 8.1 or greater */
 #define Py_WINVER 0x0603 /* _WIN32_WINNT_WINBLUE (8.1) */
 #define Py_NTDDI NTDDI_WINBLUE
+#endif
 
 /* We only set these values when building Python - we don't want to force
    these values on extensions, as that will affect the prototypes and

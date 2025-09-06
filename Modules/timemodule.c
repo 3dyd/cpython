@@ -2304,7 +2304,7 @@ pysleep(_PyTime_t timeout)
         return -1;
     }
 
-    if (!SetWaitableTimerEx(timer, &relative_timeout,
+    if (!COMPAT_FN(SetWaitableTimerEx)(timer, &relative_timeout,
                             0, // no period; the timer is signaled once
                             NULL, NULL, // no completion routine
                             NULL,  // no wake context; do not resume from suspend

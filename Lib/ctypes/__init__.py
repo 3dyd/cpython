@@ -376,7 +376,14 @@ class CDLL(object):
         self._FuncPtr = _FuncPtr
 
         if handle is None:
-            self._handle = _dlopen(self._name, mode)
+            # COMPAT_VISTA
+            try:
+                self._handle = _dlopen(self._name, mode)
+            except OSError as e:
+                if winmode is not None or e.winerror != 87:  # ERROR_INVALID_PARAMETER
+                    raise
+                # This is how it was prior 3.8
+                self._handle = _dlopen(self._name, DEFAULT_MODE)
         else:
             self._handle = handle
 

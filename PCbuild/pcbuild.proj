@@ -60,7 +60,8 @@
     <!-- python3.dll -->
     <Projects Include="python3dll.vcxproj" />
     <!-- py[w].exe -->
-    <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
+    <!-- COMPAT_VISTA: added condition -->
+    <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" Condition="'$(Platform)' != 'win32'"/>
     <!-- pyshellext.dll -->
     <Projects Include="pyshellext.vcxproj" />
     <!-- Extension modules -->

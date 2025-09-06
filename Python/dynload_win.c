@@ -253,6 +253,12 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
         hDLL = LoadLibraryExW(wpathname, NULL,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+#ifdef COMPAT_VISTA
+        if (hDLL == NULL && ERROR_INVALID_PARAMETER == GetLastError()) {
+            // This is how it was in Python 3.7.17
+            hDLL = LoadLibraryExW(wpathname, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+        }
+#endif
         Py_END_ALLOW_THREADS
         PyMem_Free(wpathname);
 

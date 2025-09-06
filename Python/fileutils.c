@@ -1489,7 +1489,16 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     else
         flags = 0;
 
+#ifdef COMPAT_VISTA  // From Python 3.11.13
+#define CONSOLE_PSEUDOHANDLE(handle) (((ULONG_PTR)(handle) & 0x3) == 0x3 && \
+        GetFileType(handle) == FILE_TYPE_CHAR)
+
+    if (!CONSOLE_PSEUDOHANDLE(handle) &&
+        !SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
+#undef CONSOLE_PSEUDOHANDLE
+#else
     if (!SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
+#endif
         if (raise)
             PyErr_SetFromWindowsErr(0);
         return -1;
@@ -2144,7 +2153,7 @@ _Py_isabs(const wchar_t *path)
 {
 #ifdef MS_WINDOWS
     const wchar_t *tail;
-    HRESULT hr = PathCchSkipRoot(path, &tail);
+    HRESULT hr = COMPAT_FN(PathCchSkipRoot)(path, &tail);
     if (FAILED(hr) || path == tail) {
         return 0;
     }
@@ -2298,7 +2307,7 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #ifdef MS_WINDOWS
-    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
+    if (FAILED(COMPAT_FN(PathCchCombineEx)(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
