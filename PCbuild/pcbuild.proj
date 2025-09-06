@@ -87,6 +87,7 @@
     </Projects>
 
     <!-- _freeze_module -->
+    <FreezeProjects Include="compat.vcxproj" Condition="'$(Platform)' == 'win32'" />
     <FreezeProjects Include="_freeze_module.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
